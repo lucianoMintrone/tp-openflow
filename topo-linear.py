@@ -7,15 +7,15 @@ Two directly connected switches plus a host for each switch:
 Adding the 'topos' dict with a key/value pair to generate our newly defined
 topology enables one to pass in '--topo=mytopo' from the command line.
 """
-
 from mininet.topo import Topo
+import os
 
 class MyTopo( Topo ):
     "Simple topology example."
 
     def build( self ):
         "Create custom topo."
-        number_of_switches = 5
+        number_of_switches = os.getenv("SWITCHES_COUNT")
 
         # Add hosts and switches
         leftHost = self.addHost( 'h1' )
