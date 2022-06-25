@@ -8,7 +8,6 @@ Adding the 'topos' dict with a key/value pair to generate our newly defined
 topology enables one to pass in '--topo=mytopo' from the command line.
 """
 
-from numpy import number
 from mininet.topo import Topo
 
 class MyTopo( Topo ):
@@ -24,8 +23,6 @@ class MyTopo( Topo ):
         switches = []
         for i in range(number_of_switches):
             switches.append( self.addSwitch( f's{i}' ) )
-        #leftSwitch = self.addSwitch( 's3' )
-        #rightSwitch = self.addSwitch( 's4' )
 
         # Add links
         self.addLink( leftHost, switches[0] )
