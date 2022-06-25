@@ -15,7 +15,7 @@ class MyTopo( Topo ):
 
     def build( self ):
         "Create custom topo."
-        number_of_switches = os.getenv("SWITCHES_COUNT")
+        number_of_switches = int(os.getenv("SWITCHES_COUNT"))
 
         # Add hosts and switches
         leftHost = self.addHost( 'h1' )
