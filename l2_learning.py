@@ -77,7 +77,6 @@ class LearningSwitch (object):
     # Switch we'll be adding L2 learning switch capabilities to
     self.connection = connection
     self.transparent = transparent
-    print("CHANO")
 
     # Our table
     self.macToPort = {}

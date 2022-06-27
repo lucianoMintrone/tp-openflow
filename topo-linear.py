@@ -17,8 +17,8 @@ class MyTopo( Topo ):
         number_of_switches = int(input("Numero de switches: "))
 
         # Add hosts and switches
-        leftHost = self.addHost( 'h1' )
-        rightHost = self.addHost( 'h2' )
+        leftHost = self.addHost( 'h1', ip='10.0.0.1' )
+        rightHost = self.addHost( 'h2', ip='10.0.0.2' )
         switches = []
         for i in range(number_of_switches):
             switches.append( self.addSwitch( f's{i}' ) )
