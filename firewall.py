@@ -11,6 +11,7 @@ import pox.openflow.libopenflow_01 as of
 from pox.lib.revent import *
 from pox.lib.util import dpidToStr
 from pox.lib.addresses import EthAddr
+import pox.lib.packet as pkt
 from collections import namedtuple
 import os
 ''' Add your imports here ... '''
@@ -34,21 +35,19 @@ class Firewall (EventMixin):
     def _handle_ConnectionUp (self, event):
         ''' Add your logic here ... '''
 
-        ''' First rule: discard all packages that have destination port 80 (IPv4, TCP only for now)'''
-        block = of.ofp_match()
+        self.__block_dst_port(port= 80, event= event)
 
-        # It is necessary to apply rules for the upper layers first, if not, the rule is invalid
-        block.dl_type = 0x0800 # IPv4
-        block.nw_proto = 6 # TCP
+        log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
-        # port 80 blocked
-        block.tp_dst = 80
+    def __block_dst_port(self, port, event):
+        ''' First rule: discard all packages that have destination port 80 (IPv4, TCP only for now) '''
+
+        block = of.ofp_match(dl_type = pkt.ethernet.IP_TYPE, nw_proto = pkt.ipv4.TCP_PROTOCOL, tp_dst = port)
 
         flow_mod = of.ofp_flow_mod()
         flow_mod.match = block
         event.connection.send(flow_mod)
 
-        log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
 def launch ():
     '''
