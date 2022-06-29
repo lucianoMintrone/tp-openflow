@@ -1,11 +1,3 @@
-'''
-Coursera:
-- Software Defined Networking (SDN) course
--- Programming Assignment: Layer-2 Firewall Application
-Professor: Nick Feamster
-Teaching Assistant: Arpit Gupta
-'''
-
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
 from pox.lib.revent import *
@@ -16,13 +8,8 @@ from collections import namedtuple
 import os
 import json
 
-
-
 log = core.getLogger()
 policyFile = "%s/pox/pox/misc/firewall-policies.csv" % os.environ[ 'HOME' ]
-
-''' Add your global variables here ... '''
-
 
 
 class Firewall (EventMixin):
@@ -31,43 +18,49 @@ class Firewall (EventMixin):
         self.listenTo(core.openflow)
 
         with open('config.json', 'r') as f:
-
             self.config = json.load(f)
 
-
-        log.debug("Enabling Firewall Module")
+        log.info("Enabling Firewall Module")
 
     def _handle_ConnectionUp (self, event):
 
 
-        print(event.ofp.ports[0].name)
+        log.info("Switch %s connecting", event.ofp.ports[0].name)
 
         current_switch_name = event.ofp.ports[0].name
 
-        if current_switch_name == self.config["firewall_switch_name"]:            
+        if current_switch_name == self.config["firewall_switch_name"]:
 
-            ''' First rule: discard all packages that have destination port {port} '''
-            self._discard_dst_port(port= 80, event= event)
+            rules = []            
 
-            ''' Second rule: discard all packages sent by host 1, dest. port 5001 and UDP '''
-            self._discard_udp_from_host_to_port(host= "10.0.0.1", port= 5001, event= event)
+            # First rule: discard all packages that have destination port {port}
+            rules.extend(self._discard_dst_port(port= 80))
 
-            log.debug("Firewall rules installed on switch %s", current_switch_name)
+            # Second rule: discard all packages sent by host 1, dest. port 5001 and UDP
+            rules.extend(self._discard_udp_from_host_to_port(host= "10.0.0.1", port= 5001))
 
-    def _discard_dst_port(self, port, event):
+            # Third rule: block the communication between two hosts
+            rules.extend(self._discard_between_two_hosts())
+
+            for rule in rules:
+
+                flow_mod = of.ofp_flow_mod()
+                flow_mod.match = rule
+                event.connection.send(flow_mod)
+
+
+            log.info("Firewall rules installed on switch %s", current_switch_name)
+
+    def _discard_dst_port(self, port):
 
         discard_ipv4_tcp = of.ofp_match(dl_type = pkt.ethernet.IP_TYPE, nw_proto = pkt.ipv4.TCP_PROTOCOL, tp_dst = port)
         
         discard_ipv4_udp = of.ofp_match(dl_type = pkt.ethernet.IP_TYPE, nw_proto = pkt.ipv4.UDP_PROTOCOL, tp_dst = port)
 
+        return [discard_ipv4_tcp, discard_ipv4_udp]
 
-        for discard_rule in [discard_ipv4_tcp, discard_ipv4_udp]:
 
-            flow_mod = of.ofp_flow_mod()
-            flow_mod.match = discard_rule
-            event.connection.send(flow_mod)
-
-    def _discard_udp_from_host_to_port(self, host, port, event):
+    def _discard_udp_from_host_to_port(self, host, port):
 
         discard_rule = of.ofp_match(
             dl_type = pkt.ethernet.IP_TYPE, 
@@ -75,9 +68,23 @@ class Firewall (EventMixin):
             nw_src = IPAddr(host),
             tp_dst = port)
 
-        flow_mod = of.ofp_flow_mod()
-        flow_mod.match = discard_rule
-        event.connection.send(flow_mod)
+        return [discard_rule]
+
+
+    def _discard_between_two_hosts(self):
+
+        host_a_mac_addr = self.config["rule_3_hosts_addr"][0]["mac_addr"]
+        host_b_mac_addr = self.config["rule_3_hosts_addr"][1]["mac_addr"]
+
+        discard_a_to_b = of.ofp_match(
+            dl_src = EthAddr(host_a_mac_addr), 
+            dl_dst = EthAddr(host_b_mac_addr))
+
+        discard_b_to_a = of.ofp_match(
+            dl_src = EthAddr(host_b_mac_addr), 
+            dl_dst = EthAddr(host_a_mac_addr))
+
+        return [discard_a_to_b, discard_b_to_a]
 
 
 
