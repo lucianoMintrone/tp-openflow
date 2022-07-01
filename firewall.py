@@ -24,7 +24,6 @@ class Firewall (EventMixin):
 
     def _handle_ConnectionUp (self, event):
 
-
         log.info("Switch %s connecting", event.ofp.ports[0].name)
 
         current_switch_name = event.ofp.ports[0].name
