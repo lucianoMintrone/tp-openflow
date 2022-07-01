@@ -1,0 +1,11 @@
+{
+	"rule_3_hosts_addr": [
+		{
+			"mac_addr": "00:00:00:00:00:01"
+		},
+		{
+			"mac_addr": "00:00:00:00:00:02"
+		}
+	],
+	"firewall_switch_name": "s0" 
+}
